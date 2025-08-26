@@ -1,7 +1,7 @@
 name: Donetick
 slug: donetick
 description: Self-hosted Donetick chore/task manager
-version: "0.1.53"        # your add-on's version; bump when you update
+version: "v0.1.52"        # your add-on's version; bump when you update
 arch: ["amd64","aarch64"]
 
 # Pin to a specific upstream image tag:
