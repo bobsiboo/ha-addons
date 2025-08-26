@@ -51,6 +51,9 @@ EOF
 # Env Donetick reads
 export DT_ENV="selfhosted"
 export DT_SQLITE_PATH="${SQLITE_PATH}"
+# NEW: force realtime values via env vars too
+export DT_REALTIME_MAXCONNECTIONS="${REALTIME_MAX_CONN}"
+export DT_REALTIME_ENABLED="${REALTIME_ENABLED}"
 
 echo "Donetick config ready at ${CONF_FILE}. Starting..."
 # Exec the upstream binary (present in base image)
