@@ -1,0 +1,23 @@
+name: Donetick
+slug: donetick
+description: Self-hosted Donetick chore/task manager
+version: "0.1.53-ha1"        # your add-on's version; bump when you update
+arch: ["amd64","aarch64"]
+
+# Pin to a specific upstream image tag:
+image: "donetick/donetick:v0.1.53"
+
+ports:
+  "2021/tcp": 2021
+
+# Persist DB inside HA's add-on data dir (included in HA backups)
+environment:
+  DT_ENV: "selfhosted"
+  DT_SQLITE_PATH: "/data/donetick.db"
+
+# Optional access to HA-managed dirs
+map: ["config:rw","share:rw"]
+
+startup: services
+init: false
+webui: "http://[HOST]:[PORT:2021]"
