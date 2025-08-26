@@ -4,34 +4,54 @@ description: Self-hosted Donetick chore/task manager
 version: "v0.1.52-ha1"        # your add-on's version; bump when you update
 arch: ["amd64","aarch64"]
 
-# Supervisor will build using Dockerfile + build.json
-
-
-# We BUILD this add-on (no 'image:' key here)
+# Build mode (Dockerfile/build.json present)
 ports:
-  "2021/tcp": 2021             # external port on HA host
+  "2021/tcp": 2021
 
-# Mount HA-managed dirs
 map: ["config:rw","data:rw"]
 
-# === UI-configurable options shown in HA ===
+# ---------- BASIC OPTIONS ----------
 options:
   sqlite_path: /data/donetick.db
-  jwt_secret: ""
+  jwt_secret: ""                # blank → auto-generate (≥32 chars)
   serve_frontend: true
   realtime_enabled: true
-  realtime_max_connections: 64
-  realtime_max_connections_per_user: 4
-  realtime_event_queue_size: 256          # NEW
+
+  # ---------- ADVANCED TOGGLE ----------
+  advanced: false               # when false, we write safe defaults below
+
+  # ---------- ADVANCED REALTIME (used only if advanced: true) ----------
+  realtime_max_connections: 1000
+  realtime_max_connections_per_user: 5
+  realtime_event_queue_size: 2048
+  realtime_heartbeat_interval: 60s
+  realtime_connection_timeout: 120s
+  realtime_cleanup_interval: 2m
+  realtime_stale_threshold: 5m
+  realtime_sse_enabled: true
+  realtime_enable_compression: true
+  realtime_enable_stats: true
+  realtime_allowed_origins:
+    - "*"                       # list; add domains if you want
 
 schema:
   sqlite_path: str
   jwt_secret: password?
   serve_frontend: bool
   realtime_enabled: bool
+  advanced: bool
   realtime_max_connections: int
   realtime_max_connections_per_user: int
-  realtime_event_queue_size: int          # NEW 
+  realtime_event_queue_size: int
+  realtime_heartbeat_interval: str
+  realtime_connection_timeout: str
+  realtime_cleanup_interval: str
+  realtime_stale_threshold: str
+  realtime_sse_enabled: bool
+  realtime_enable_compression: bool
+  realtime_enable_stats: bool
+  realtime_allowed_origins:
+    - str
 
 startup: services
 init: false
