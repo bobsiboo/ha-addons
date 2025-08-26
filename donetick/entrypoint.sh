@@ -11,11 +11,15 @@ JWT_SECRET_OPT="$(jq -r '.jwt_secret // empty' "$OPTS")"
 SERVE_FRONTEND="$(jq -r '.serve_frontend' "$OPTS")"
 REALTIME_ENABLED="$(jq -r '.realtime_enabled' "$OPTS")"
 REALTIME_MAX_CONN="$(jq -r '.realtime_max_connections' "$OPTS")"
+REALTIME_MAX_CONN_PER_USER="$(jq -r '.realtime_max_connections_per_user' "$OPTS")"
+
 
 # Fallbacks/sanitization
 [ -z "$REALTIME_MAX_CONN" ] || [ "$REALTIME_MAX_CONN" -le 0 ] && REALTIME_MAX_CONN=64
 [ "$SERVE_FRONTEND" != "true" ] && [ "$SERVE_FRONTEND" != "false" ] && SERVE_FRONTEND=true
 [ "$REALTIME_ENABLED" != "true" ] && [ "$REALTIME_ENABLED" != "false" ] && REALTIME_ENABLED=true
+[ -z "$REALTIME_MAX_CONN_PER_USER" ] || [ "$REALTIME_MAX_CONN_PER_USER" -le 0 ] && REALTIME_MAX_CONN_PER_USER=4
+
 
 # Reuse existing secret if present and user left jwt_secret blank
 EXISTING_SECRET=""
@@ -47,6 +51,8 @@ realtime:
   enabled: ${REALTIME_ENABLED}
   maxConnections: ${REALTIME_MAX_CONN}
   max_connections: ${REALTIME_MAX_CONN}
+  maxConnectionsPerUser: ${REALTIME_MAX_CONN_PER_USER}
+  max_connections_per_user: ${REALTIME_MAX_CONN_PER_USER}
 EOF
 
 # --- export env that Donetick reads (belt & suspenders) ---
@@ -57,12 +63,17 @@ export DT_SQLITE_PATH="${SQLITE_PATH}"
 export DT_REALTIME_ENABLED="${REALTIME_ENABLED}"
 export DT_REALTIME_MAXCONNECTIONS="${REALTIME_MAX_CONN}"
 export DT_REALTIME_MAX_CONNECTIONS="${REALTIME_MAX_CONN}"
+export DT_REALTIME_MAXCONNECTIONSPERUSER="${REALTIME_MAX_CONN_PER_USER}"      # NEW
+export DT_REALTIME_MAX_CONNECTIONS_PER_USER="${REALTIME_MAX_CONN_PER_USER}"  # NEW
+
 
 # Debug print (shows in add-on logs)
 echo "Env overrides:"
 echo "  DT_REALTIME_ENABLED=${DT_REALTIME_ENABLED}"
 echo "  DT_REALTIME_MAXCONNECTIONS=${DT_REALTIME_MAXCONNECTIONS}"
 echo "  DT_REALTIME_MAX_CONNECTIONS=${DT_REALTIME_MAX_CONNECTIONS}"
+echo "  DT_REALTIME_MAXCONNECTIONSPERUSER=${DT_REALTIME_MAXCONNECTIONSPERUSER}"
+echo "  DT_REALTIME_MAX_CONNECTIONS_PER_USER=${DT_REALTIME_MAX_CONNECTIONS_PER_USER}"
 
 echo "Donetick config ready at ${CONF_FILE}. Starting..."
 exec /donetick

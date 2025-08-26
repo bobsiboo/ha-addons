@@ -17,16 +17,19 @@ map: ["config:rw","data:rw"]
 # === UI-configurable options shown in HA ===
 options:
   sqlite_path: /data/donetick.db
-  jwt_secret: ""               # leave empty to auto-generate (>=32 chars)
+  jwt_secret: ""
   serve_frontend: true
   realtime_enabled: true
   realtime_max_connections: 64
+  realtime_max_connections_per_user: 4   
+
 schema:
   sqlite_path: str
   jwt_secret: password?
   serve_frontend: bool
   realtime_enabled: bool
   realtime_max_connections: int
+  realtime_max_connections_per_user: int  
 
 startup: services
 init: false
