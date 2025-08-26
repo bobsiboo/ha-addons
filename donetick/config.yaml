@@ -21,7 +21,8 @@ options:
   serve_frontend: true
   realtime_enabled: true
   realtime_max_connections: 64
-  realtime_max_connections_per_user: 4   
+  realtime_max_connections_per_user: 4
+  realtime_event_queue_size: 256          # NEW
 
 schema:
   sqlite_path: str
@@ -29,7 +30,8 @@ schema:
   serve_frontend: bool
   realtime_enabled: bool
   realtime_max_connections: int
-  realtime_max_connections_per_user: int  
+  realtime_max_connections_per_user: int
+  realtime_event_queue_size: int          # NEW 
 
 startup: services
 init: false

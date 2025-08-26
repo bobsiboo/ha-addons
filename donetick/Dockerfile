@@ -10,4 +10,4 @@ RUN chmod +x /usr/local/bin/entrypoint.sh
 
 # Use our entrypoint, then run upstream's default CMD ("donetick")
 ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
-CMD ["donetick"]
+# remove CMD ["donetick"]
