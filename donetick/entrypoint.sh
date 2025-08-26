@@ -5,18 +5,24 @@ OPTS="/data/options.json"
 CONF_DIR="/config"
 CONF_FILE="${CONF_DIR}/selfhosted.yaml"
 
-# Read options from HA (written by Supervisor from the add-on UI)
+# Read HA add-on options
 SQLITE_PATH="$(jq -r '.sqlite_path' "$OPTS")"
 JWT_SECRET_OPT="$(jq -r '.jwt_secret // empty' "$OPTS")"
 SERVE_FRONTEND="$(jq -r '.serve_frontend' "$OPTS")"
+REALTIME_ENABLED="$(jq -r '.realtime_enabled' "$OPTS")"
+REALTIME_MAX_CONN="$(jq -r '.realtime_max_connections' "$OPTS")"
 
-# If config exists, try to reuse existing secret when user left jwt_secret blank
+# Fallbacks/sanitization
+[ -z "$REALTIME_MAX_CONN" ] || [ "$REALTIME_MAX_CONN" -le 0 ] && REALTIME_MAX_CONN=64
+[ "$SERVE_FRONTEND" != "true" ] && [ "$SERVE_FRONTEND" != "false" ] && SERVE_FRONTEND=true
+[ "$REALTIME_ENABLED" != "true" ] && [ "$REALTIME_ENABLED" != "false" ] && REALTIME_ENABLED=true
+
+# Reuse existing secret if present and user left jwt_secret blank
 EXISTING_SECRET=""
 if [ -f "$CONF_FILE" ]; then
   EXISTING_SECRET="$(sed -n 's/^[[:space:]]*secret:[[:space:]]*\"\?\([^\"\r\n]\+\)\"\?/\1/p' "$CONF_FILE" | head -n1)"
 fi
 
-# Decide the secret: UI value > existing > generate
 JWT_SECRET="$JWT_SECRET_OPT"
 if [ -z "$JWT_SECRET" ] || [ ${#JWT_SECRET} -lt 32 ]; then
   if [ -n "$EXISTING_SECRET" ] && [ ${#EXISTING_SECRET} -ge 32 ]; then
@@ -26,7 +32,7 @@ if [ -z "$JWT_SECRET" ] || [ ${#JWT_SECRET} -lt 32 ]; then
   fi
 fi
 
-# Ensure /config exists and write (or rewrite) the YAML
+# Write the config Donetick expects when DT_ENV=selfhosted
 mkdir -p "$CONF_DIR"
 cat > "$CONF_FILE" <<EOF
 name: "Donetick @ Home"
@@ -37,11 +43,15 @@ database:
 server:
   port: 2021
   serve_frontend: ${SERVE_FRONTEND}
+realtime:
+  enabled: ${REALTIME_ENABLED}
+  maxConnections: ${REALTIME_MAX_CONN}
 EOF
 
-# Env expected by Donetick (overrides YAML when relevant)
+# Env Donetick reads
 export DT_ENV="selfhosted"
 export DT_SQLITE_PATH="${SQLITE_PATH}"
 
 echo "Donetick config ready at ${CONF_FILE}. Starting..."
+# Exec the upstream binary (present in base image)
 exec /donetick

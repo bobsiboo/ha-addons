@@ -19,10 +19,14 @@ options:
   sqlite_path: /data/donetick.db
   jwt_secret: ""               # leave empty to auto-generate (>=32 chars)
   serve_frontend: true
+  realtime_enabled: true
+  realtime_max_connections: 64
 schema:
   sqlite_path: str
   jwt_secret: password?
   serve_frontend: bool
+  realtime_enabled: bool
+  realtime_max_connections: int
 
 startup: services
 init: false
