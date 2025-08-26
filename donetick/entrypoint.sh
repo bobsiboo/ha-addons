@@ -44,4 +44,4 @@ export DT_ENV="selfhosted"
 export DT_SQLITE_PATH="${SQLITE_PATH}"
 
 echo "Donetick config ready at ${CONF_FILE}. Starting..."
-exec "$@"
+exec /donetick
