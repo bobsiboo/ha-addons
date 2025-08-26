@@ -46,6 +46,7 @@ server:
 realtime:
   enabled: ${REALTIME_ENABLED}
   maxConnections: ${REALTIME_MAX_CONN}
+  max_connections: ${REALTIME_MAX_CONN}
 EOF
 
 # --- export env that Donetick reads (belt & suspenders) ---
