@@ -1,0 +1,6 @@
+{
+  "build_from": {
+    "aarch64": "donetick/donetick:v0.1.52",
+    "amd64": "donetick/donetick:v0.1.52"
+  }
+}

@@ -1,22 +1,28 @@
 name: Donetick
 slug: donetick
 description: Self-hosted Donetick chore/task manager
-version: "v0.1.52"        # your add-on's version; bump when you update
+version: "v0.1.52-ha1"        # your add-on's version; bump when you update
 arch: ["amd64","aarch64"]
 
-# Pin to a specific upstream image tag:
-image: "donetick/donetick"
+# Supervisor will build using Dockerfile + build.json
 
+
+# We BUILD this add-on (no 'image:' key here)
 ports:
-  "2021/tcp": 2021
+  "2021/tcp": 2021             # external port on HA host
 
-# Persist DB inside HA's add-on data dir (included in HA backups)
-environment:
-  DT_ENV: "selfhosted"
-  DT_SQLITE_PATH: "/data/donetick.db"
+# Mount HA-managed dirs
+map: ["config:rw","data:rw"]
 
-# Optional access to HA-managed dirs
-map: ["config:rw","share:rw"]
+# === UI-configurable options shown in HA ===
+options:
+  sqlite_path: /data/donetick.db
+  jwt_secret: ""               # leave empty to auto-generate (>=32 chars)
+  serve_frontend: true
+schema:
+  sqlite_path: str
+  jwt_secret: password?
+  serve_frontend: bool
 
 startup: services
 init: false
