@@ -83,10 +83,13 @@ fi
 mkdir -p "$CONF_DIR"
 {
   echo 'name: "Donetick @ Home"'
+  echo 'is_done_tick_dot_com: false'        # <--- ADD
+  echo 'is_user_creation_disabled: false'   # <--- ADD
   echo 'jwt:'
   echo "  secret: \"${JWT_SECRET}\""
   echo 'database:'
   echo '  type: sqlite'
+  echo '  migration: true' 
   echo 'server:'
   echo '  port: 2021'
   echo "  serve_frontend: ${SERVE_FRONTEND}"
@@ -115,6 +118,9 @@ nl -ba "$CONF_FILE" | sed -n '1,120p'
 # ---------- ENV OVERRIDES (belt & suspenders) ----------
 export DT_ENV="selfhosted"
 export DT_SQLITE_PATH="${SQLITE_PATH}"
+export DT_DATABASE_SQLITE_PATH="${SQLITE_PATH}"     # <--- ADD (other name some builds expect)
+export DT_DATABASE_TYPE="sqlite"                    # <--- ADD (belt & suspenders)
+export DT_DATABASE_MIGRATION="true"                 # <--- ADD to force migrations
 
 export DT_REALTIME_ENABLED="${REALTIME_ENABLED}"
 export DT_REALTIME_SSE_ENABLED="${RT_SSE_ENABLED}"
