@@ -1,9 +1,13 @@
 #!/bin/sh
 set -e
 
+log() { printf '%s %s\n' "$(date -Iseconds)" "$*"; }
+
 OPTS="/data/options.json"
 CONF_DIR="/config"
 CONF_FILE="${CONF_DIR}/selfhosted.yaml"
+
+log "==== Donetick add-on start ===="
 
 # ---------- READ BASIC OPTIONS ----------
 SQLITE_PATH="$(jq -r '.sqlite_path // "/data/donetick.db"' "$OPTS")"
@@ -75,7 +79,7 @@ if [ -z "$JWT_SECRET" ] || [ ${#JWT_SECRET} -lt 32 ]; then
   fi
 fi
 
-# ---------- WRITE YAML (safe indentation) ----------
+# ---------- WRITE YAML (snake_case only; safe indentation) ----------
 mkdir -p "$CONF_DIR"
 {
   echo 'name: "Donetick @ Home"'
@@ -102,17 +106,11 @@ mkdir -p "$CONF_DIR"
   IFS=','; for o in $RT_ALLOWED_ORIGINS_CSV; do
     [ -n "$o" ] && printf '    - "%s"\n' "$o"
   done; unset IFS
-  # camelCase twins (to satisfy either parser)
-  echo "  heartbeatInterval: ${RT_HEARTBEAT_INTERVAL}"
-  echo "  connectionTimeout: ${RT_CONNECTION_TIMEOUT}"
-  echo "  maxConnections: ${RT_MAX_CONN}"
-  echo "  maxConnectionsPerUser: ${RT_MAX_CONN_PER_USER}"
-  echo "  eventQueueSize: ${RT_EVENT_QUEUE_SIZE}"
-  echo "  cleanupInterval: ${RT_CLEANUP_INTERVAL}"
-  echo "  staleThreshold: ${RT_STALE_THRESHOLD}"
-  echo "  enableCompression: ${RT_ENABLE_COMPRESSION}"
-  echo "  enableStats: ${RT_ENABLE_STATS}"
 } > "$CONF_FILE"
+
+# ---------- SHOW THE FILE WITH LINE NUMBERS ----------
+log "--- Rendered /config/selfhosted.yaml (first 120 lines) ---"
+nl -ba "$CONF_FILE" | sed -n '1,120p'
 
 # ---------- ENV OVERRIDES (belt & suspenders) ----------
 export DT_ENV="selfhosted"
@@ -131,13 +129,13 @@ export DT_REALTIME_ENABLE_COMPRESSION="${RT_ENABLE_COMPRESSION}"
 export DT_REALTIME_ENABLE_STATS="${RT_ENABLE_STATS}"
 export DT_REALTIME_ALLOWED_ORIGINS="${RT_ALLOWED_ORIGINS_CSV}"
 
-echo "Env overrides:"
-echo "  DT_REALTIME_ENABLED=${DT_REALTIME_ENABLED}"
-echo "  DT_REALTIME_MAX_CONNECTIONS=${DT_REALTIME_MAX_CONNECTIONS}"
-echo "  DT_REALTIME_MAX_CONNECTIONS_PER_USER=${DT_REALTIME_MAX_CONNECTIONS_PER_USER}"
-echo "  DT_REALTIME_EVENT_QUEUE_SIZE=${DT_REALTIME_EVENT_QUEUE_SIZE}"
-echo "  DT_REALTIME_CLEANUP_INTERVAL=${DT_REALTIME_CLEANUP_INTERVAL}"
-echo "  DT_REALTIME_STALE_THRESHOLD=${DT_REALTIME_STALE_THRESHOLD}"
+log "Env overrides:"
+log "  DT_REALTIME_ENABLED=${DT_REALTIME_ENABLED}"
+log "  DT_REALTIME_MAX_CONNECTIONS=${DT_REALTIME_MAX_CONNECTIONS}"
+log "  DT_REALTIME_MAX_CONNECTIONS_PER_USER=${DT_REALTIME_MAX_CONNECTIONS_PER_USER}"
+log "  DT_REALTIME_EVENT_QUEUE_SIZE=${DT_REALTIME_EVENT_QUEUE_SIZE}"
+log "  DT_REALTIME_CLEANUP_INTERVAL=${DT_REALTIME_CLEANUP_INTERVAL}"
+log "  DT_REALTIME_STALE_THRESHOLD=${DT_REALTIME_STALE_THRESHOLD}"
 
-echo "Donetick config ready at ${CONF_FILE}. Starting..."
+log "Donetick config ready at ${CONF_FILE}. Starting..."
 exec /donetick
