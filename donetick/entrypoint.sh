@@ -48,13 +48,21 @@ realtime:
   maxConnections: ${REALTIME_MAX_CONN}
 EOF
 
-# Env Donetick reads
+# --- export env that Donetick reads (belt & suspenders) ---
 export DT_ENV="selfhosted"
 export DT_SQLITE_PATH="${SQLITE_PATH}"
-# NEW: force realtime values via env vars too
-export DT_REALTIME_MAXCONNECTIONS="${REALTIME_MAX_CONN}"
+
+# Force realtime via env (try both spellings just in case)
 export DT_REALTIME_ENABLED="${REALTIME_ENABLED}"
+export DT_REALTIME_MAXCONNECTIONS="${REALTIME_MAX_CONN}"
+export DT_REALTIME_MAX_CONNECTIONS="${REALTIME_MAX_CONN}"
+
+# Debug print (shows in add-on logs)
+echo "Env overrides:"
+echo "  DT_REALTIME_ENABLED=${DT_REALTIME_ENABLED}"
+echo "  DT_REALTIME_MAXCONNECTIONS=${DT_REALTIME_MAXCONNECTIONS}"
+echo "  DT_REALTIME_MAX_CONNECTIONS=${DT_REALTIME_MAX_CONNECTIONS}"
 
 echo "Donetick config ready at ${CONF_FILE}. Starting..."
-# Exec the upstream binary (present in base image)
 exec /donetick
+
