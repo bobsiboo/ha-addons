@@ -31,6 +31,26 @@ RT_ENABLE_COMPRESSION="$(jq -r '.realtime_enable_compression // true' "$OPTS")"
 RT_ENABLE_STATS="$(jq -r '.realtime_enable_stats // true' "$OPTS")"
 # Build CSV for env; YAML list is written below
 RT_ALLOWED_ORIGINS_CSV="$(jq -r '.realtime_allowed_origins // ["*"] | join(",")' "$OPTS")"
+# Debug toggles
+DEBUG_LOGGING="$(jq -r '.debug_logging // false' "$OPTS")"
+LOG_LEVEL="$(jq -r '.logging_level // "info"' "$OPTS")"
+LOG_ENCODING="$(jq -r '.logging_encoding // "console"' "$OPTS")"
+LOG_DEVELOPMENT="$(jq -r '.logging_development // false' "$OPTS")"
+
+
+# Compute effective logging config
+if [ "$DEBUG_LOGGING" = "true" ]; then
+  LOG_LEVEL="debug"
+  LOG_ENCODING="console"
+  LOG_DEVELOPMENT="true"
+  GIN_MODE="debug"
+else
+  case "$LOG_LEVEL" in debug|info|warn|error) ;; *) LOG_LEVEL="info";; esac
+  case "$LOG_ENCODING" in console|json) ;; *) LOG_ENCODING="console";; esac
+  case "$LOG_DEVELOPMENT" in true|false) ;; *) LOG_DEVELOPMENT="false";; esac
+  GIN_MODE="release"
+fi
+
 
 # ---------- SANITIZE / DEFAULTS ----------
 case "$SERVE_FRONTEND" in true|false) ;; *) SERVE_FRONTEND=true;; esac
@@ -93,6 +113,10 @@ mkdir -p "$CONF_DIR"
   echo 'server:'
   echo '  port: 2021'
   echo "  serve_frontend: ${SERVE_FRONTEND}"
+  echo 'logging:'
+  echo "  level: \"${LOG_LEVEL}\""
+  echo "  encoding: \"${LOG_ENCODING}\""
+  echo "  development: ${LOG_DEVELOPMENT}"
   echo 'realtime:'
   echo "  enabled: ${REALTIME_ENABLED}"
   echo "  sse_enabled: ${RT_SSE_ENABLED}"
@@ -139,6 +163,11 @@ export DT_REALTIME_STALE_THRESHOLD="${RT_STALE_THRESHOLD}"
 export DT_REALTIME_ENABLE_COMPRESSION="${RT_ENABLE_COMPRESSION}"
 export DT_REALTIME_ENABLE_STATS="${RT_ENABLE_STATS}"
 export DT_REALTIME_ALLOWED_ORIGINS="${RT_ALLOWED_ORIGINS_CSV}"
+export DT_LOGGING_LEVEL="${LOG_LEVEL}"
+export DT_LOGGING_ENCODING="${LOG_ENCODING}"
+export DT_LOGGING_DEVELOPMENT="${LOG_DEVELOPMENT}"
+export GIN_MODE="${GIN_MODE}"
+
 
 log "Env overrides:"
 log "  DT_REALTIME_ENABLED=${DT_REALTIME_ENABLED}"
@@ -153,4 +182,5 @@ log "  DT_DATABASE_SQLITE_PATH=${DT_DATABASE_SQLITE_PATH}"
 log "  DT_DATABASE_MIGRATION=${DT_DATABASE_MIGRATION}"
 
 log "Donetick config ready at ${CONF_FILE}. Starting..."
+
 exec /donetick

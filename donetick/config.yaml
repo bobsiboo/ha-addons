@@ -33,6 +33,11 @@ options:
   realtime_enable_stats: true
   realtime_allowed_origins:
     - "*"                       # list; add domains if you want
+  debug_logging: false          # simple ON/OFF switch
+  logging_level: info           # used when debug_logging = false
+  logging_encoding: console     # console | json
+  logging_development: false    # zap "development" mode
+
 
 schema:
   sqlite_path: str
@@ -52,6 +57,10 @@ schema:
   realtime_enable_stats: bool
   realtime_allowed_origins:
     - str
+  debug_logging: bool
+  logging_level: list(debug|info|warn|error)
+  logging_encoding: list(console|json)
+  logging_development: bool
 
 startup: services
 init: false
