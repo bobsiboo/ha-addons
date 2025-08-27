@@ -29,14 +29,18 @@ RT_STALE_THRESHOLD="$(jq -r '.realtime_stale_threshold // empty' "$OPTS")"
 RT_SSE_ENABLED="$(jq -r '.realtime_sse_enabled // true' "$OPTS")"
 RT_ENABLE_COMPRESSION="$(jq -r '.realtime_enable_compression // true' "$OPTS")"
 RT_ENABLE_STATS="$(jq -r '.realtime_enable_stats // true' "$OPTS")"
-# Build CSV for env; YAML list is written below
+
+# ---------- LIST OPTIONS (CSV for printing/env) ----------
 RT_ALLOWED_ORIGINS_CSV="$(jq -r '.realtime_allowed_origins // ["*"] | join(",")' "$OPTS")"
-# Debug toggles
+SERVER_CORS_CSV="$(jq -r '.server_cors_allow_origins // ["*"] | join(",")' "$OPTS")"
+[ -z "$RT_ALLOWED_ORIGINS_CSV" ] && RT_ALLOWED_ORIGINS_CSV="*"
+[ -z "$SERVER_CORS_CSV" ] && SERVER_CORS_CSV="*"
+
+# ---------- DEBUG TOGGLES ----------
 DEBUG_LOGGING="$(jq -r '.debug_logging // false' "$OPTS")"
 LOG_LEVEL="$(jq -r '.logging_level // "info"' "$OPTS")"
 LOG_ENCODING="$(jq -r '.logging_encoding // "console"' "$OPTS")"
 LOG_DEVELOPMENT="$(jq -r '.logging_development // false' "$OPTS")"
-
 
 # Compute effective logging config
 if [ "$DEBUG_LOGGING" = "true" ]; then
@@ -50,7 +54,6 @@ else
   case "$LOG_DEVELOPMENT" in true|false) ;; *) LOG_DEVELOPMENT="false";; esac
   GIN_MODE="release"
 fi
-
 
 # ---------- SANITIZE / DEFAULTS ----------
 case "$SERVE_FRONTEND" in true|false) ;; *) SERVE_FRONTEND=true;; esac
@@ -82,7 +85,7 @@ else
   [ -n "$RT_CONNECTION_TIMEOUT" ] || RT_CONNECTION_TIMEOUT="120s"
   [ -n "$RT_CLEANUP_INTERVAL" ] || RT_CLEANUP_INTERVAL="2m"
   [ -n "$RT_STALE_THRESHOLD" ] || RT_STALE_THRESHOLD="5m"
-  [ -n "$RT_ALLOWED_ORIGINS_CSV" ] || RT_ALLOWED_ORIGINS_CSV="*"
+  [ -z "$RT_ALLOWED_ORIGINS_CSV" ] && RT_ALLOWED_ORIGINS_CSV="*"
 fi
 
 # ---------- JWT SECRET (reuse or generate) ----------
@@ -103,22 +106,33 @@ fi
 mkdir -p "$CONF_DIR"
 {
   echo 'name: "Donetick @ Home"'
-  echo 'is_done_tick_dot_com: false'        # <--- ADD
-  echo 'is_user_creation_disabled: false'   # <--- ADD
+  echo 'is_done_tick_dot_com: false'
+  echo 'is_user_creation_disabled: false'
+
   echo 'jwt:'
   echo "  secret: \"${JWT_SECRET}\""
+
   echo 'database:'
   echo '  type: sqlite'
-  echo '  migration: true' 
+  echo '  migration: true'
+
   echo 'server:'
   echo '  port: 2021'
   echo "  serve_frontend: ${SERVE_FRONTEND}"
   echo '  cors_allow_origins:'
-  echo '    - "*"'
+  set -f
+  _CORS_CSV="${SERVER_CORS_CSV:-*}"
+  IFS=','; for o in $_CORS_CSV; do
+    [ -n "$o" ] && printf '    - "%s"\n' "$o"
+  done
+  set +f
+  unset IFS
+
   echo 'logging:'
   echo "  level: \"${LOG_LEVEL}\""
   echo "  encoding: \"${LOG_ENCODING}\""
   echo "  development: ${LOG_DEVELOPMENT}"
+
   echo 'realtime:'
   echo "  enabled: ${REALTIME_ENABLED}"
   echo "  sse_enabled: ${RT_SSE_ENABLED}"
@@ -132,31 +146,38 @@ mkdir -p "$CONF_DIR"
   echo "  enable_compression: ${RT_ENABLE_COMPRESSION}"
   echo "  enable_stats: ${RT_ENABLE_STATS}"
   echo "  allowed_origins:"
-  set -f                  # disable globbing so "*" stays literal
-  IFS=','                 # split CSV into items
-  for o in $RT_ALLOWED_ORIGINS_CSV; do
+  set -f
+  _RT_CSV="${RT_ALLOWED_ORIGINS_CSV:-*}"
+  IFS=','; for o in $_RT_CSV; do
     [ -n "$o" ] && printf '    - "%s"\n' "$o"
   done
-  set +f                  # re-enable globbing
+  set +f
   unset IFS
 } > "$CONF_FILE"
-
 
 # ---------- SHOW THE FILE WITH LINE NUMBERS ----------
 log "--- Rendered /config/selfhosted.yaml (first 120 lines) ---"
 nl -ba "$CONF_FILE" | sed -n '1,120p'
 
-# ---------- ENV OVERRIDES (belt & suspenders) ----------
+# ---------- ENV OVERRIDES ----------
 export DT_ENV="selfhosted"
+
+# DB
+export DT_DATABASE_TYPE="sqlite"
 export DT_SQLITE_PATH="${SQLITE_PATH}"
-export DT_DATABASE_SQLITE_PATH="${SQLITE_PATH}"     # <--- ADD (other name some builds expect)
-export DT_DATABASE_TYPE="sqlite"                    # <--- ADD (belt & suspenders)
-export DT_DATABASE_MIGRATION="true"                 # <--- ADD to force migrations
+export DT_DATABASE_SQLITE_PATH="${SQLITE_PATH}"
+export DT_DATABASE_MIGRATION="true"
+
+# Signup flags
 export DT_IS_USER_CREATION_DISABLED="false"
 export DONETICK_DISABLE_SIGNUP="false"
+export DT_IS_DONE_TICK_DOT_COM="false"
+export DT_NAME="selfhosted"
 
+# CORS
 export DT_SERVER_CORS_ALLOW_ORIGINS="${SERVER_CORS_CSV}"
 
+# Realtime
 export DT_REALTIME_ENABLED="${REALTIME_ENABLED}"
 export DT_REALTIME_SSE_ENABLED="${RT_SSE_ENABLED}"
 export DT_REALTIME_HEARTBEAT_INTERVAL="${RT_HEARTBEAT_INTERVAL}"
@@ -169,12 +190,14 @@ export DT_REALTIME_STALE_THRESHOLD="${RT_STALE_THRESHOLD}"
 export DT_REALTIME_ENABLE_COMPRESSION="${RT_ENABLE_COMPRESSION}"
 export DT_REALTIME_ENABLE_STATS="${RT_ENABLE_STATS}"
 export DT_REALTIME_ALLOWED_ORIGINS="${RT_ALLOWED_ORIGINS_CSV}"
+
+# Logging
 export DT_LOGGING_LEVEL="${LOG_LEVEL}"
 export DT_LOGGING_ENCODING="${LOG_ENCODING}"
 export DT_LOGGING_DEVELOPMENT="${LOG_DEVELOPMENT}"
 export GIN_MODE="${GIN_MODE}"
 
-
+# ---------- LOG A QUICK SUMMARY ----------
 log "Env overrides:"
 log "  DT_REALTIME_ENABLED=${DT_REALTIME_ENABLED}"
 log "  DT_REALTIME_MAX_CONNECTIONS=${DT_REALTIME_MAX_CONNECTIONS}"
@@ -192,5 +215,4 @@ log "  DONETICK_DISABLE_SIGNUP=${DONETICK_DISABLE_SIGNUP}"
 log "  DT_SERVER_CORS_ALLOW_ORIGINS=${DT_SERVER_CORS_ALLOW_ORIGINS}"
 
 log "Donetick config ready at ${CONF_FILE}. Starting..."
-
 exec /donetick
