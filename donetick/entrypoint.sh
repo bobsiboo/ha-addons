@@ -106,10 +106,15 @@ mkdir -p "$CONF_DIR"
   echo "  enable_compression: ${RT_ENABLE_COMPRESSION}"
   echo "  enable_stats: ${RT_ENABLE_STATS}"
   echo "  allowed_origins:"
-  IFS=','; for o in $RT_ALLOWED_ORIGINS_CSV; do
+  set -f                  # disable globbing so "*" stays literal
+  IFS=','                 # split CSV into items
+  for o in $RT_ALLOWED_ORIGINS_CSV; do
     [ -n "$o" ] && printf '    - "%s"\n' "$o"
-  done; unset IFS
+  done
+  set +f                  # re-enable globbing
+  unset IFS
 } > "$CONF_FILE"
+
 
 # ---------- SHOW THE FILE WITH LINE NUMBERS ----------
 log "--- Rendered /config/selfhosted.yaml (first 120 lines) ---"
@@ -142,6 +147,10 @@ log "  DT_REALTIME_MAX_CONNECTIONS_PER_USER=${DT_REALTIME_MAX_CONNECTIONS_PER_US
 log "  DT_REALTIME_EVENT_QUEUE_SIZE=${DT_REALTIME_EVENT_QUEUE_SIZE}"
 log "  DT_REALTIME_CLEANUP_INTERVAL=${DT_REALTIME_CLEANUP_INTERVAL}"
 log "  DT_REALTIME_STALE_THRESHOLD=${DT_REALTIME_STALE_THRESHOLD}"
+log "DB env:"
+log "  DT_DATABASE_TYPE=${DT_DATABASE_TYPE}"
+log "  DT_DATABASE_SQLITE_PATH=${DT_DATABASE_SQLITE_PATH}"
+log "  DT_DATABASE_MIGRATION=${DT_DATABASE_MIGRATION}"
 
 log "Donetick config ready at ${CONF_FILE}. Starting..."
 exec /donetick
