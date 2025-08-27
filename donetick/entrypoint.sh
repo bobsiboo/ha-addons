@@ -29,6 +29,15 @@ RT_STALE_THRESHOLD="$(jq -r '.realtime_stale_threshold // empty' "$OPTS")"
 RT_SSE_ENABLED="$(jq -r '.realtime_sse_enabled // true' "$OPTS")"
 RT_ENABLE_COMPRESSION="$(jq -r '.realtime_enable_compression // true' "$OPTS")"
 RT_ENABLE_STATS="$(jq -r '.realtime_enable_stats // true' "$OPTS")"
+SERVER_CORS_CSV="$(jq -r '.server_cors_allow_origins // ["*"] | join(",")' "$OPTS")"
+[ -z "$SERVER_CORS_CSV" ] && SERVER_CORS_CSV="*"
+
+SERVER_RATE_LIMIT="$(jq -r '.server_rate_limit // 300' "$OPTS")"
+SERVER_RATE_PERIOD="$(jq -r '.server_rate_period // "60s"' "$OPTS")"
+SERVER_READ_TIMEOUT="$(jq -r '.server_read_timeout // "10s"' "$OPTS")"
+SERVER_WRITE_TIMEOUT="$(jq -r '.server_write_timeout // "10s"' "$OPTS")"
+case "$SERVER_RATE_LIMIT" in ''|*[!0-9]*) SERVER_RATE_LIMIT=300;; esac
+
 
 # ---------- LIST OPTIONS (CSV for printing/env) ----------
 RT_ALLOWED_ORIGINS_CSV="$(jq -r '.realtime_allowed_origins // ["*"] | join(",")' "$OPTS")"
@@ -119,6 +128,10 @@ mkdir -p "$CONF_DIR"
   echo 'server:'
   echo '  port: 2021'
   echo "  serve_frontend: ${SERVE_FRONTEND}"
+  echo "  read_timeout: ${SERVER_READ_TIMEOUT}"
+  echo "  write_timeout: ${SERVER_WRITE_TIMEOUT}"
+  echo "  rate_period: ${SERVER_RATE_PERIOD}"
+  echo "  rate_limit: ${SERVER_RATE_LIMIT}"
   echo '  cors_allow_origins:'
   set -f
   _CORS_CSV="${SERVER_CORS_CSV:-*}"
@@ -127,6 +140,7 @@ mkdir -p "$CONF_DIR"
   done
   set +f
   unset IFS
+
 
   echo 'logging:'
   echo "  level: \"${LOG_LEVEL}\""
@@ -190,6 +204,12 @@ export DT_REALTIME_STALE_THRESHOLD="${RT_STALE_THRESHOLD}"
 export DT_REALTIME_ENABLE_COMPRESSION="${RT_ENABLE_COMPRESSION}"
 export DT_REALTIME_ENABLE_STATS="${RT_ENABLE_STATS}"
 export DT_REALTIME_ALLOWED_ORIGINS="${RT_ALLOWED_ORIGINS_CSV}"
+export DT_SERVER_READ_TIMEOUT="${SERVER_READ_TIMEOUT}"
+export DT_SERVER_WRITE_TIMEOUT="${SERVER_WRITE_TIMEOUT}"
+export DT_SERVER_RATE_PERIOD="${SERVER_RATE_PERIOD}"
+export DT_SERVER_RATE_LIMIT="${SERVER_RATE_LIMIT}"
+export DT_SERVER_CORS_ALLOW_ORIGINS="${SERVER_CORS_CSV}"
+
 
 # Logging
 export DT_LOGGING_LEVEL="${LOG_LEVEL}"
@@ -213,6 +233,13 @@ log "Signup/CORS env:"
 log "  DT_IS_USER_CREATION_DISABLED=${DT_IS_USER_CREATION_DISABLED}"
 log "  DONETICK_DISABLE_SIGNUP=${DONETICK_DISABLE_SIGNUP}"
 log "  DT_SERVER_CORS_ALLOW_ORIGINS=${DT_SERVER_CORS_ALLOW_ORIGINS}"
+log "Server limits/CORS:"
+log "  DT_SERVER_RATE_LIMIT=${DT_SERVER_RATE_LIMIT}"
+log "  DT_SERVER_RATE_PERIOD=${DT_SERVER_RATE_PERIOD}"
+log "  DT_SERVER_READ_TIMEOUT=${DT_SERVER_READ_TIMEOUT}"
+log "  DT_SERVER_WRITE_TIMEOUT=${DT_SERVER_WRITE_TIMEOUT}"
+log "  DT_SERVER_CORS_ALLOW_ORIGINS=${DT_SERVER_CORS_ALLOW_ORIGINS}"
+
 
 log "Donetick config ready at ${CONF_FILE}. Starting..."
 exec /donetick

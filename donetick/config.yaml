@@ -1,7 +1,7 @@
 name: Donetick
 slug: donetick
 description: Self-hosted Donetick chore/task manager
-version: "v0.1.52-ha7"        # your add-on's version; bump when you update
+version: "v0.1.52-ha8"        # your add-on's version; bump when you update
 arch: ["amd64","aarch64"]
 
 # Build mode (Dockerfile/build.json present)
@@ -37,6 +37,12 @@ options:
   logging_level: info           # used when debug_logging = false
   logging_encoding: console     # console | json
   logging_development: false    # zap "development" mode
+  server_cors_allow_origins:
+    - "*"
+  server_rate_limit: 300
+  server_rate_period: 60s
+  server_read_timeout: 10s
+  server_write_timeout: 10s
 
 
 schema:
@@ -61,6 +67,12 @@ schema:
   logging_level: list(debug|info|warn|error)
   logging_encoding: list(console|json)
   logging_development: bool
+  server_cors_allow_origins:
+    - str
+  server_rate_limit: int
+  server_rate_period: str
+  server_read_timeout: str
+  server_write_timeout: str
 
 startup: services
 init: false
