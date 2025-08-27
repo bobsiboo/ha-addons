@@ -113,6 +113,8 @@ mkdir -p "$CONF_DIR"
   echo 'server:'
   echo '  port: 2021'
   echo "  serve_frontend: ${SERVE_FRONTEND}"
+  echo '  cors_allow_origins:'
+  echo '    - "*"'
   echo 'logging:'
   echo "  level: \"${LOG_LEVEL}\""
   echo "  encoding: \"${LOG_ENCODING}\""
@@ -150,6 +152,9 @@ export DT_SQLITE_PATH="${SQLITE_PATH}"
 export DT_DATABASE_SQLITE_PATH="${SQLITE_PATH}"     # <--- ADD (other name some builds expect)
 export DT_DATABASE_TYPE="sqlite"                    # <--- ADD (belt & suspenders)
 export DT_DATABASE_MIGRATION="true"                 # <--- ADD to force migrations
+export DT_IS_USER_CREATION_DISABLED="false"
+export DONETICK_DISABLE_SIGNUP="false"
+
 
 export DT_REALTIME_ENABLED="${REALTIME_ENABLED}"
 export DT_REALTIME_SSE_ENABLED="${RT_SSE_ENABLED}"
