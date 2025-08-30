@@ -26,12 +26,19 @@ PG_USER="$(jq -r '.postgres.user // empty' "$OPTS")"
 PG_PASS="$(jq -r '.postgres.password // empty' "$OPTS")"
 PG_DB="$(jq -r '.postgres.db // "mealie"' "$OPTS")"
 
-# Persist data inside HA backups
+# Ensure Mealie's data path exists and link it into the app dir
 mkdir -p /data/mealie
+mkdir -p /app
+
 if [ ! -L /app/data ]; then
-  if [ -d /app/data ]; then rm -rf /app/data; fi
+  # If upstream created a real dir, migrate any contents, then replace with symlink
+  if [ -d /app/data ]; then
+    mv /app/data/* /data/mealie/ 2>/dev/null || true
+    rmdir /app/data 2>/dev/null || true
+  fi
   ln -s /data/mealie /app/data
 fi
+
 
 # Export env vars Mealie understands (per docs)
 export TZ="${TZ_OPT}"
