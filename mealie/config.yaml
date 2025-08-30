@@ -1,0 +1,65 @@
+name: Mealie
+slug: mealie
+description: Mealie recipe manager (SQLite by default)
+version: "v3.1.2-ha1"
+arch:
+  - aarch64
+  - amd64
+
+startup: services
+init: false
+
+# Map host port (editable in HA UI)
+ports:
+  "9925/tcp": 9000
+ports_description:
+  "9925/tcp": Mealie web UI
+
+map:
+  - data:rw
+  - config:rw
+
+webui: "http://[HOST]:[PORT:9925]"
+
+options:
+  # General
+  tz: "UTC"                 # e.g. Europe/Brussels
+  base_url: ""              # e.g. http://homeassistant.local:9925
+  allow_signup: true
+  default_email: "changeme@example.com"
+  default_password: "MyPassword"
+  default_group: "Home"
+  default_household: "Home"
+
+  # Runtime
+  api_port: 9000
+  puid: 0
+  pgid: 0
+
+  # Database engine
+  db_engine: sqlite         # sqlite | postgres
+  postgres:
+    host: ""
+    port: 5432
+    user: ""
+    password: ""
+    db: "mealie"
+
+schema:
+  tz: str
+  base_url: str?
+  allow_signup: bool
+  default_email: str
+  default_password: str
+  default_group: str
+  default_household: str
+  api_port: int
+  puid: int
+  pgid: int
+  db_engine: list(sqlite|postgres)
+  postgres:
+    host: str?
+    port: int?
+    user: str?
+    password: str?
+    db: str?
